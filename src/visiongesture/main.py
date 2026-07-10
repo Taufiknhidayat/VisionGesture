@@ -1,3 +1,4 @@
+# src/visiongesture/main.py
 import cv2
 
 from configs.settings import (
@@ -14,17 +15,15 @@ from src.visiongesture.ui.overlay import Overlay
 class VisionGestureApp:
 
     def __init__(self):
-
         self.camera = Camera()
-
         self.detector = HandDetector()
-
         self.fps_counter = FPSCounter()
+        # Inisialisasi objek overlay baru
+        self.overlay = Overlay()
 
     def run(self):
 
         while True:
-
             success, frame = self.camera.read()
 
             if not success:
@@ -38,59 +37,36 @@ class VisionGestureApp:
             # Detect Hand
             frame, hands = self.detector.detect(frame)
 
-            # FPS
+            # Hitung performa FPS saat ini
             fps = self.fps_counter.get_fps()
 
-            # Overlay
-            Overlay.draw_title(frame)
-            Overlay.draw_fps(frame, fps)
+            # Render seluruh komponen UI secara profesional dalam satu panggilan
+            frame = self.overlay.draw(frame, hands, fps)
 
-            # Draw Every Hand
-            for hand in hands:
-
-                Overlay.draw_hand(frame, hand)
-
-            # Total Finger
-            Overlay.draw_total(frame, hands)
-
-            # Total Hands
+            # Tampilkan instruksi keluar yang minimalis di pojok bawah
             cv2.putText(
                 frame,
-                f"HANDS : {len(hands)}",
-                (20, 210),
+                "Press 'Q' to Exit",
+                (25, frame.shape[0] - 25),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
-                (255, 255, 0),
-                2,
-            )
-
-            # Exit
-            cv2.putText(
-                frame,
-                "Press Q to Exit",
-                (20, 680),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (255, 255, 255),
-                2,
+                0.5,
+                (180, 180, 180),
+                1,
+                cv2.LINE_AA
             )
 
             cv2.imshow(APP_NAME, frame)
 
             key = cv2.waitKey(1) & 0xFF
-
             if key == ord("q"):
                 break
 
         self.camera.release()
-
         cv2.destroyAllWindows()
 
 
 def main():
-
     app = VisionGestureApp()
-
     app.run()
 
 
