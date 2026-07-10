@@ -20,6 +20,7 @@ opt_einsum==3.4.0
 packaging==26.2
 pillow==12.3.0
 protobuf==4.25.9
+psutil==5.9.8
 PyAutoGUI==0.9.54
 pycparser==3.0
 PyGetWindow==0.0.9

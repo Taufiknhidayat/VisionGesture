@@ -22,5 +22,13 @@ SMOOTHING_WINDOW_SIZE = 5
 # =========================================================
 # GESTURE ENGINE CONFIGURATIONS
 # =========================================================
-GESTURE_BUFFER_SIZE = 5         # Number of frames to stabilize gesture
-GESTURE_CONFIDENCE_MIN = 0.80   # Minimum confidence to trigger event
+GESTURE_BUFFER_SIZE = 5         
+GESTURE_CONFIDENCE_MIN = 0.80   
+
+# =========================================================
+# DASHBOARD CONFIGURATIONS
+# =========================================================
+SHOW_DASHBOARD = True
+DASHBOARD_WIDTH = 320
+DASHBOARD_REFRESH_RATE = 1.0    # Seconds between CPU/RAM checks (prevents lag)
+DEFAULT_ACTIVE_MODULE = "Gesture Engine"
