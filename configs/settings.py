@@ -1,0 +1,19 @@
+APP_NAME = "VisionGesture"
+
+CAMERA_INDEX = 0
+
+FRAME_WIDTH = 1280
+FRAME_HEIGHT = 720
+
+FPS = 60
+
+MAX_HANDS = 2
+
+DETECTION_CONFIDENCE = 0.7
+TRACKING_CONFIDENCE = 0.6
+
+SHOW_FPS = True
+
+# True = kamera selfie
+# False = kamera normal
+MIRROR_CAMERA = True
