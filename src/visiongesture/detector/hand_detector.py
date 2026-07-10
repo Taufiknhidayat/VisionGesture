@@ -5,7 +5,6 @@ from configs.settings import (
     MAX_HANDS,
     DETECTION_CONFIDENCE,
     TRACKING_CONFIDENCE,
-    MIRROR_CAMERA,
 )
 
 from src.visiongesture.models.hand import Hand, Landmark
@@ -63,11 +62,9 @@ class HandDetector:
                 bbox = (xmin, ymin, xmax - xmin, ymax - ymin)
                 center = ((xmin + xmax) // 2, (ymin + ymax) // 2)
 
+                # Fetch raw label directly from MediaPipe
+                # Removed the manual swap logic to fix the inverted Right/Left issue on front camera
                 label = handedness.classification[0].label
-
-                # Koreksi label jika kamera dimirror
-                if MIRROR_CAMERA:
-                    label = "Right" if label == "Left" else "Left"
 
                 hand = Hand(
                     id=idx,
@@ -77,11 +74,11 @@ class HandDetector:
                     center=center,
                 )
 
-                # Hitung jumlah, state jari, dan orientasi telapak tangan
+                # Calculate finger state, angles, and palm orientation
                 self.counter.count(hand)
                 hand_list.append(hand)
 
-                # Gambar landmark MediaPipe standar secara tipis/bersih
+                # Draw standard MediaPipe landmarks cleanly
                 self.drawer.draw_landmarks(
                     frame,
                     hand_landmarks,

@@ -1,4 +1,3 @@
-# src/visiongesture/main.py
 import cv2
 
 from configs.settings import (
@@ -8,9 +7,10 @@ from configs.settings import (
 
 from src.visiongesture.camera.camera import Camera
 from src.visiongesture.detector.hand_detector import HandDetector
+from src.visiongesture.gesture.gesture_engine import GestureEngine
+from src.visiongesture.gesture.gesture_state import GestureState
 from src.visiongesture.ui.fps import FPSCounter
 from src.visiongesture.ui.overlay import Overlay
-
 
 class VisionGestureApp:
 
@@ -18,32 +18,48 @@ class VisionGestureApp:
         self.camera = Camera()
         self.detector = HandDetector()
         self.fps_counter = FPSCounter()
-        # Inisialisasi objek overlay baru
         self.overlay = Overlay()
+        
+        # Inisialisasi Gesture Engine
+        self.gesture_engine = GestureEngine()
+        
+        # Mendaftarkan contoh Event Listener untuk Gesture
+        self._register_events()
+
+    def _register_events(self):
+        """Register custom callbacks for specific gestures (Event-Driven)."""
+        def on_peace(hand):
+            print(f"[EVENT] {hand.handedness} Hand triggered PEACE gesture!")
+            
+        def on_fist(hand):
+            print(f"[EVENT] {hand.handedness} Hand triggered FIST! Ready to grab/click.")
+
+        # Daftarkan ke mesin event
+        self.gesture_engine.events.on(GestureState.PEACE, on_peace)
+        self.gesture_engine.events.on(GestureState.FIST, on_fist)
 
     def run(self):
-
         while True:
             success, frame = self.camera.read()
 
             if not success:
-                print("Camera Error")
+                print("[ERROR] Camera failed to read frame.")
                 break
 
-            # Mirror Camera
             if MIRROR_CAMERA:
                 frame = cv2.flip(frame, 1)
 
-            # Detect Hand
+            # Deteksi Tangan (sudah menghitung matriks jari di dalamnya)
             frame, hands = self.detector.detect(frame)
+            
+            # Proses matriks jari menjadi Gestur
+            self.gesture_engine.process(hands)
 
-            # Hitung performa FPS saat ini
             fps = self.fps_counter.get_fps()
 
-            # Render seluruh komponen UI secara profesional dalam satu panggilan
+            # Render UI
             frame = self.overlay.draw(frame, hands, fps)
 
-            # Tampilkan instruksi keluar yang minimalis di pojok bawah
             cv2.putText(
                 frame,
                 "Press 'Q' to Exit",
