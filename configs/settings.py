@@ -38,8 +38,16 @@ ZOOM_SENSITIVITY = 15
 # VIRTUAL MOUSE CONFIGURATIONS
 # =========================================================
 VIRTUAL_MOUSE_ENABLED = True
-MOUSE_SMOOTHING = 7             # Mengurangi getaran kursor (jitter)
-FRAME_REDUCTION = 150           # Margin aktif kamera agar kursor bisa mencapai ujung layar
+MOUSE_SMOOTHING = 7             
+FRAME_REDUCTION = 150           
+
+# =========================================================
+# AIR DRAWING CONFIGURATIONS
+# =========================================================
+DRAW_BRUSH_THICKNESS = 15
+DRAW_ERASER_THICKNESS = 80
+DRAW_MAX_UNDO_STEPS = 20
+EXPORT_DIR = "assets/exports"
 
 # =========================================================
 # DASHBOARD CONFIGURATIONS
@@ -47,4 +55,4 @@ FRAME_REDUCTION = 150           # Margin aktif kamera agar kursor bisa mencapai 
 SHOW_DASHBOARD = True
 DASHBOARD_WIDTH = 320
 DASHBOARD_REFRESH_RATE = 1.0
-DEFAULT_ACTIVE_MODULE = "Virtual Mouse"
+DEFAULT_ACTIVE_MODULE = "Air Drawing"

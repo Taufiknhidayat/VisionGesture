@@ -14,12 +14,13 @@ from src.visiongesture.gesture.gesture_engine import GestureEngine
 from src.visiongesture.gesture.gesture_state import GestureState
 from src.visiongesture.tracker.motion_tracker import MotionTracker
 from src.visiongesture.virtual_mouse.mouse_controller import MouseController
+from src.visiongesture.drawing.drawing_engine import DrawingEngine
 from src.visiongesture.ui.fps import FPSCounter
 from src.visiongesture.ui.overlay import Overlay
 from src.visiongesture.ui.dashboard import Dashboard
 
-class VisionGestureApp:
 
+class VisionGestureApp:
     def __init__(self):
         self.camera = Camera()
         self.detector = HandDetector()
@@ -30,8 +31,10 @@ class VisionGestureApp:
         self.gesture_engine = GestureEngine()
         self.motion_tracker = MotionTracker()
         
-        # Priority 4: Virtual Mouse Controller
         self.mouse_controller = MouseController()
+        
+        # Priority 5: Air Drawing Engine
+        self.drawing_engine = DrawingEngine()
         
         self.active_module = DEFAULT_ACTIVE_MODULE
         
@@ -40,10 +43,32 @@ class VisionGestureApp:
     def _register_events(self) -> None:
         """Registers all event listeners for Gestures and Motions."""
         
-        # Scroll Handlers using the Motion Tracker events
+        # --- Air Drawing Gesture Handlers ---
+        def on_thumb_up(hand):
+            if self.active_module == "Air Drawing":
+                self.drawing_engine.canvas.undo()
+
+        def on_thumb_down(hand):
+            if self.active_module == "Air Drawing":
+                self.drawing_engine.canvas.redo()
+
+        def on_love(hand):
+            if self.active_module == "Air Drawing":
+                self.drawing_engine.canvas.save("png")
+                self.drawing_engine.canvas.save("pdf")
+
+        def on_fist(hand):
+            if self.active_module == "Air Drawing":
+                self.drawing_engine.canvas.clear()
+
+        self.gesture_engine.events.on(GestureState.THUMB_UP, on_thumb_up)
+        self.gesture_engine.events.on(GestureState.THUMB_DOWN, on_thumb_down)
+        self.gesture_engine.events.on(GestureState.LOVE, on_love)
+        self.gesture_engine.events.on(GestureState.FIST, on_fist)
+
+        # --- Virtual Mouse Scroll Handlers ---
         def on_scroll_motion(direction: str):
             if VIRTUAL_MOUSE_ENABLED and self.active_module == "Virtual Mouse":
-                print(f"[MOUSE] Executing {direction} scroll")
                 self.mouse_controller.scroll(direction)
 
         self.motion_tracker.on("Swipe Up", lambda d: on_scroll_motion("Swipe Up"))
@@ -60,16 +85,20 @@ class VisionGestureApp:
             if MIRROR_CAMERA:
                 frame = cv2.flip(frame, 1)
 
-            # Detector includes MediaPipe processing + Hungarian Stable Centroid Tracker
+            # Core Detections
             frame, hands = self.detector.detect(frame)
-            
-            # Process Recognition Engines
             self.gesture_engine.process(hands)
             self.motion_tracker.process(hands)
 
-            # Virtual Mouse Processing (Tracking the primary hand only)
-            if VIRTUAL_MOUSE_ENABLED and self.active_module == "Virtual Mouse" and hands:
-                self.mouse_controller.process(hands[0], frame)
+            # Route execution based on Active Module
+            if hands:
+                if self.active_module == "Virtual Mouse":
+                    self.mouse_controller.process(hands[0], frame)
+
+            if self.active_module == "Air Drawing":
+                # Air Drawing handles its own frame merging (can run even without hands)
+                hand = hands[0] if hands else None
+                frame = self.drawing_engine.process(hand, frame)
 
             fps = self.fps_counter.get_fps()
 
@@ -78,10 +107,11 @@ class VisionGestureApp:
             if SHOW_DASHBOARD:
                 frame = self.dashboard.draw(frame, hands, fps, self.active_module)
 
+            # Draw Control Hotkeys Hint
             cv2.putText(
                 frame,
-                "Press 'Q' to Exit",
-                (frame.shape[1] - 180, frame.shape[0] - 25),
+                "KEYS: [M]ouse | [D]raw | [T]rack | [Q]uit",
+                (frame.shape[1] - 380, frame.shape[0] - 25),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
                 (180, 180, 180),
@@ -91,12 +121,20 @@ class VisionGestureApp:
 
             cv2.imshow(APP_NAME, frame)
 
+            # Hotkey Switcher Logic
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break
+            elif key == ord("m"):
+                self.active_module = "Virtual Mouse"
+            elif key == ord("d"):
+                self.active_module = "Air Drawing"
+            elif key == ord("t"):
+                self.active_module = "Tracking Engine"
 
         self.camera.release()
         cv2.destroyAllWindows()
+
 
 def main():
     app = VisionGestureApp()
