@@ -3,6 +3,7 @@ from collections import deque
 from typing import Dict, List, Callable
 from configs.settings import MOTION_HISTORY_SIZE, SWIPE_THRESHOLD, ZOOM_SENSITIVITY
 from src.visiongesture.models.hand import Hand
+from src.visiongesture.gesture.gesture_state import GestureState
 
 class MotionTracker:
     def __init__(self):
@@ -28,6 +29,13 @@ class MotionTracker:
             if hand.id not in self.history:
                 self.history[hand.id] = deque(maxlen=MOTION_HISTORY_SIZE)
             
+            # --- BUG FIX: ONLY PROCESS SWIPES IF HAND IS FULLY OPEN ---
+            # Prevents conflicting motions when the user is using the Virtual Mouse (Index pointing)
+            if hand.gesture and hand.gesture.state != GestureState.OPEN_HAND:
+                self.history[hand.id].clear()
+                self.last_triggered_swipe[hand.id] = None
+                continue
+
             self.history[hand.id].append(hand.center)
             path = self.history[hand.id]
 
@@ -58,19 +66,24 @@ class MotionTracker:
 
         # 2. Dual Hand Motion (Zoom)
         if len(hands) == 2:
-            cx1, cy1 = hands[0].center
-            cx2, cy2 = hands[1].center
-            
-            current_dist = math.hypot(cx2 - cx1, cy2 - cy1)
-            
-            if self.prev_zoom_distance is not None:
-                dist_diff = current_dist - self.prev_zoom_distance
-                
-                if dist_diff > ZOOM_SENSITIVITY:
-                    self._trigger("Zoom In", "Dual Hands")
-                elif dist_diff < -ZOOM_SENSITIVITY:
-                    self._trigger("Zoom Out", "Dual Hands")
+            # Verify both hands are somewhat open to prevent accidental zooming while clicking
+            if hands[0].gesture and hands[1].gesture:
+                if hands[0].gesture.state != GestureState.FIST and hands[1].gesture.state != GestureState.FIST:
+                    cx1, cy1 = hands[0].center
+                    cx2, cy2 = hands[1].center
                     
-            self.prev_zoom_distance = current_dist
+                    current_dist = math.hypot(cx2 - cx1, cy2 - cy1)
+                    
+                    if self.prev_zoom_distance is not None:
+                        dist_diff = current_dist - self.prev_zoom_distance
+                        
+                        if dist_diff > ZOOM_SENSITIVITY:
+                            self._trigger("Zoom In", "Dual Hands")
+                        elif dist_diff < -ZOOM_SENSITIVITY:
+                            self._trigger("Zoom Out", "Dual Hands")
+                            
+                    self.prev_zoom_distance = current_dist
+                else:
+                    self.prev_zoom_distance = None
         else:
             self.prev_zoom_distance = None

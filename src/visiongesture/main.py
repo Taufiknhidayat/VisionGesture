@@ -4,7 +4,8 @@ from configs.settings import (
     APP_NAME,
     MIRROR_CAMERA,
     SHOW_DASHBOARD,
-    DEFAULT_ACTIVE_MODULE
+    DEFAULT_ACTIVE_MODULE,
+    VIRTUAL_MOUSE_ENABLED
 )
 
 from src.visiongesture.camera.camera import Camera
@@ -12,6 +13,7 @@ from src.visiongesture.detector.hand_detector import HandDetector
 from src.visiongesture.gesture.gesture_engine import GestureEngine
 from src.visiongesture.gesture.gesture_state import GestureState
 from src.visiongesture.tracker.motion_tracker import MotionTracker
+from src.visiongesture.virtual_mouse.mouse_controller import MouseController
 from src.visiongesture.ui.fps import FPSCounter
 from src.visiongesture.ui.overlay import Overlay
 from src.visiongesture.ui.dashboard import Dashboard
@@ -28,38 +30,24 @@ class VisionGestureApp:
         self.gesture_engine = GestureEngine()
         self.motion_tracker = MotionTracker()
         
+        # Priority 4: Virtual Mouse Controller
+        self.mouse_controller = MouseController()
+        
         self.active_module = DEFAULT_ACTIVE_MODULE
         
         self._register_events()
 
     def _register_events(self) -> None:
         """Registers all event listeners for Gestures and Motions."""
-        # --- Static Gestures ---
-        def on_peace(hand):
-            print(f"[GESTURE] {hand.handedness} Hand ID-{hand.id} triggered PEACE!")
-            
-        def on_fist(hand):
-            print(f"[GESTURE] {hand.handedness} Hand ID-{hand.id} triggered FIST!")
+        
+        # Scroll Handlers using the Motion Tracker events
+        def on_scroll_motion(direction: str):
+            if VIRTUAL_MOUSE_ENABLED and self.active_module == "Virtual Mouse":
+                print(f"[MOUSE] Executing {direction} scroll")
+                self.mouse_controller.scroll(direction)
 
-        self.gesture_engine.events.on(GestureState.PEACE, on_peace)
-        self.gesture_engine.events.on(GestureState.FIST, on_fist)
-
-        # --- Dynamic Motions ---
-        def on_swipe(data):
-            print(f"[MOTION] {data} performed a Swipe!")
-            
-        def on_zoom_in(data):
-            print(f"[MOTION] {data} are Zooming IN +++")
-
-        def on_zoom_out(data):
-            print(f"[MOTION] {data} are Zooming OUT ---")
-
-        self.motion_tracker.on("Swipe Left", lambda d: print(f"[MOTION] {d}: SWIPE LEFT <<<"))
-        self.motion_tracker.on("Swipe Right", lambda d: print(f"[MOTION] {d}: SWIPE RIGHT >>>"))
-        self.motion_tracker.on("Swipe Up", lambda d: print(f"[MOTION] {d}: SWIPE UP ^^^"))
-        self.motion_tracker.on("Swipe Down", lambda d: print(f"[MOTION] {d}: SWIPE DOWN vvv"))
-        self.motion_tracker.on("Zoom In", on_zoom_in)
-        self.motion_tracker.on("Zoom Out", on_zoom_out)
+        self.motion_tracker.on("Swipe Up", lambda d: on_scroll_motion("Swipe Up"))
+        self.motion_tracker.on("Swipe Down", lambda d: on_scroll_motion("Swipe Down"))
 
     def run(self) -> None:
         while True:
@@ -75,11 +63,13 @@ class VisionGestureApp:
             # Detector includes MediaPipe processing + Hungarian Stable Centroid Tracker
             frame, hands = self.detector.detect(frame)
             
-            # Static Gesture Recognition
+            # Process Recognition Engines
             self.gesture_engine.process(hands)
-            
-            # Dynamic Motion Recognition (Swipes, Zoom)
             self.motion_tracker.process(hands)
+
+            # Virtual Mouse Processing (Tracking the primary hand only)
+            if VIRTUAL_MOUSE_ENABLED and self.active_module == "Virtual Mouse" and hands:
+                self.mouse_controller.process(hands[0], frame)
 
             fps = self.fps_counter.get_fps()
 

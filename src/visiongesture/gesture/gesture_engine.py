@@ -25,7 +25,9 @@ class GestureEngine:
             recognized_state = GestureState.OPEN_HAND
             confidence = 0.98
             
-        elif state == [0, 1, 0, 0, 0]:
+        # BUG FIX: Added tolerance for Thumb being slightly open [1, 1, 0, 0, 0]
+        # This makes virtual mouse movement (INDEX) much more natural and robust.
+        elif state == [0, 1, 0, 0, 0] or state == [1, 1, 0, 0, 0]:
             recognized_state = GestureState.INDEX
             confidence = 0.90
             
@@ -60,9 +62,6 @@ class GestureEngine:
             else:
                 recognized_state = GestureState.THUMB_DOWN
             confidence = 0.95
-
-        # Note: VULCAN [0,1,1,1,1] requires distance checking between middle and ring.
-        # This will be refined later, mapped as Unknown for now to avoid false positives.
 
         return Gesture(state=recognized_state, confidence=confidence)
 

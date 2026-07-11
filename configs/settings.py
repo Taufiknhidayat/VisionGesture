@@ -28,11 +28,18 @@ GESTURE_CONFIDENCE_MIN = 0.80
 # =========================================================
 # TRACKING & MOTION CONFIGURATIONS
 # =========================================================
-TRACKER_MAX_DISAPPEARED = 10    # Frames to wait before dropping a lost hand
-TRACKER_MAX_DISTANCE = 150      # Max pixel distance for Hungarian matching
-MOTION_HISTORY_SIZE = 15        # Queue size for motion path
-SWIPE_THRESHOLD = 80            # Minimum pixel movement to trigger a swipe
-ZOOM_SENSITIVITY = 15           # Minimum distance change to trigger zoom
+TRACKER_MAX_DISAPPEARED = 10    
+TRACKER_MAX_DISTANCE = 150      
+MOTION_HISTORY_SIZE = 15        
+SWIPE_THRESHOLD = 80            
+ZOOM_SENSITIVITY = 15           
+
+# =========================================================
+# VIRTUAL MOUSE CONFIGURATIONS
+# =========================================================
+VIRTUAL_MOUSE_ENABLED = True
+MOUSE_SMOOTHING = 7             # Mengurangi getaran kursor (jitter)
+FRAME_REDUCTION = 150           # Margin aktif kamera agar kursor bisa mencapai ujung layar
 
 # =========================================================
 # DASHBOARD CONFIGURATIONS
@@ -40,4 +47,4 @@ ZOOM_SENSITIVITY = 15           # Minimum distance change to trigger zoom
 SHOW_DASHBOARD = True
 DASHBOARD_WIDTH = 320
 DASHBOARD_REFRESH_RATE = 1.0
-DEFAULT_ACTIVE_MODULE = "Tracking Engine"
+DEFAULT_ACTIVE_MODULE = "Virtual Mouse"
