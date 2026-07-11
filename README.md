@@ -1,22 +1,54 @@
+# VisionGesture
+
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.11.0+-green.svg?style=for-the-badge&logo=opencv&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10.21-brightgreen.svg?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
-**VisionGesture** adalah kerangka kerja (*framework*) *Computer Vision* berbasis Python yang memanfaatkan **Google MediaPipe Hands** untuk pelacakan tangan secara *real-time*. Proyek ini diimplementasikan menggunakan arsitektur modular berstandar industri dengan algoritma canggih untuk memproses geometri tangan secara stabil, presisi, dan bebas dari kedipan (*anti-flicker*).
-
-Aplikasi ini sangat ideal sebagai fondasi pengembangan sistem cerdas seperti *Gesture Engine berbasis AI*, *Virtual Mouse control*, hingga *Air Drawing*.
+**VisionGesture** adalah kerangka kerja (*framework*) *Computer Vision* berbasis Python yang memanfaatkan **Google MediaPipe Hands** untuk pelacakan tangan secara *real-time*. Proyek ini diimplementasikan menggunakan arsitektur modular (*Clean Architecture & Event-Driven*) berstandar industri dengan algoritma canggih untuk memproses geometri tangan secara stabil, presisi, dan bebas dari kedipan (*anti-flicker*).
 
 ---
 
-## 🚀 Fitur Utama & Inovasi Algoritma
+## 🚀 Modul Terintegrasi & Fitur Utama
 
-- **Advanced Joint Angle Detection**: Menghitung sudut rotasi antar sendi (`CMC` ➔ `MCP` ➔ `IP` ➔ `TIP`) menggunakan hukum cosinus. Algoritma ini membuat deteksi jari tetap akurat 360° meskipun tangan dimiringkan, diputar, atau terbalik.
-- **Adaptive Distance Ratio**: Mengganti perbandingan piksel kaku dengan rasio dinamis (jarak pergelangan tangan ke ujung jari dibagi jarak ke sendi tengah). Deteksi tetap konsisten tanpa terpengaruh jarak tangan dari kamera.
-- **Bi-Directional Anti-Flicker Filter**: Menggunakan mekanisme antrean riwayat (*history buffer frame voting*) dengan struktur data `deque` untuk menyaring fluktuasi minor (*noise*) sehingga angka hitungan pada layar sangat kokoh.
-- **Real-Time Palm Orientation Tracking**: Mampu mengklasifikasikan arah hadap dan posisi telapak tangan secara geometris (`Palm Front`, `Palm Back`, `Palm Left`, `Palm Right`, `Palm Down`).
-- **AI-Ready Finger State Matrix**: Menghasilkan representasi *state* biner per-jari dalam bentuk matriks array (contoh: `[1, 1, 1, 1, 1]` untuk telapak terbuka penuh) yang tersimpan langsung di objek model data sehingga siap dikonsumsi oleh lapisan kecerdasan buatan (*AI Layer*).
-- **Semi-Transparent HUD UI Overlay**: Desain antarmuka grafis yang modern dan minimalis menggunakan teknik *alpha blending* dan *corner-only bounding box* yang elegan tanpa memblokir pandangan objek utama.
+### 1. Core Gesture Engine & Hand Tracking
+- **Advanced Joint Angle Detection**: Kalkulasi sudut rotasi antar sendi (Hukum Cosinus) untuk deteksi jari yang akurat 360°.
+- **Adaptive Distance Ratio**: Deteksi konsisten tanpa terpengaruh jarak tangan dari kamera.
+- **Bi-Directional Anti-Flicker Filter**: Mekanisme antrean riwayat (*history buffer voting*) untuk hasil yang solid dan stabil.
+- **Hungarian Centroid Tracker**: Pelacakan Hand ID tingkat militer yang mengunci ID secara permanen meskipun tangan saling bersilangan.
+- **Motion Tracker**: Pengenalan pergerakan dinamis seperti *Swipe Left, Right, Up, Down*, dan *Zoom In/Out* (Multi-hand).
+
+### 2. Virtual Mouse Controller
+Mengendalikan kursor komputer sepenuhnya menggunakan gestur tangan di udara dengan dukungan multimonitor dan penghalus gerak (*Smoothing Filter*).
+
+### 3. Smart Air Drawing
+Kanvas virtual interaktif untuk menggambar di udara yang dilengkapi antarmuka pengguna cerdas (*Palette UI*) dan ekspor otomatis ke format Transparan PNG dan PDF.
+
+### 4. Real-time System Dashboard
+Panel UI bergaya *High-Tech* transparan di sisi kiri layar untuk memonitor:
+- **FPS (Frame Per Second)**
+- **CPU & RAM Usage** (via *psutil*)
+- **Active Module**
+- **Hand ID, Gesture State, & Confidence Score**
+
+---
+
+## 🖐️ Kamus Gestur (Gesture Dictionary)
+
+Sistem ini mengenali berbagai bentuk gestur tangan. Berikut adalah panduan bentuk fisik tangan Anda dan fungsinya di setiap modul:
+
+| Nama Gestur | Bentuk Fisik Jari Tangan | Fungsi di Virtual Mouse | Fungsi di Air Drawing |
+| :--- | :--- | :--- | :--- |
+| **INDEX** | Hanya jari Telunjuk terbuka, sisanya mengepal. | Menggerakkan Kursor | Menggambar / Mencoret |
+| **OK** | Ujung Jempol & Telunjuk menempel (menjepit). | *Left Click & Drag* | - |
+| **PEACE** | Jari Telunjuk & Tengah terbuka (huruf V). | *Right Click* | Melayang (*Hover*) & Pilih Warna |
+| **ROCK** | Jari Telunjuk & Kelingking terbuka (Metal). | *Double Click* | - |
+| **FIST** | Semua jari mengepal rapat. | - | Menghapus seluruh kanvas (*Clear*) |
+| **THUMB UP** | Hanya Jempol yang menunjuk ke atas. | - | Batal (*Undo*) |
+| **THUMB DOWN** | Hanya Jempol yang menunjuk ke bawah. | - | Ulangi (*Redo*) |
+| **LOVE** | Jempol, Telunjuk, Kelingking terbuka (Spiderman).| - | Simpan Gambar (Export PNG & PDF)|
+| **OPEN HAND**| Telapak tangan terbuka penuh (Lima jari). | Siaga (*Standby*) | Siaga (*Standby*) |
+| **SWIPE** | Gerakkan `OPEN HAND` dengan cepat ke atas/bawah. | *Scroll Mouse* (Naik/Turun)| - |
 
 ---
 
@@ -26,33 +58,22 @@ Aplikasi ini sangat ideal sebagai fondasi pengembangan sistem cerdas seperti *Ge
 VisionGesture/
 │
 ├── configs/
-│   ├── __init__.py
-│   ├── colors.py          # Palet warna terpusat format BGR OpenCV
-│   └── settings.py        # Pusat konfigurasi (Thresholds, Smoothing Window, FPS, dsb)
+│   ├── colors.py          # Palet warna terpusat
+│   └── settings.py        # Pusat konfigurasi tuning & threshold
 │
-├── src/
-│   └── visiongesture/
-│       ├── __init__.py
-│       ├── main.py        # Titik masuk utama aplikasi (Application Core-Loop)
-│       ├── camera/
-│       │   ├── __init__.py
-│       │   └── camera.py  # Abstraksi OpenCV VideoCapture
-│       ├── counter/
-│       │   ├── __init__.py
-│       │   └── finger_counter.py # Core Engine: Kalkulasi Sudut, Rasio, Orientasi & Smoothing
-│       ├── detector/
-│       │   ├── __init__.py
-│       │   └── hand_detector.py  # Pipeline Pemrosesan MediaPipe Hands
-│       ├── models/
-│       │   ├── __init__.py
-│       │   └── hand.py    # Dataclass representasi objek Hand dan Landmark (State & Orientation)
-│       └── ui/
-│           ├── __init__.py
-│           ├── fps.py     # Pengukur performa framerate sistem
-│           └── overlay.py # Desain HUD UI, Garis Sendi, dan Bounding Box Minimalis
+├── src/visiongesture/
+│   ├── camera/            # Abstraksi OpenCV VideoCapture
+│   ├── counter/           # Algoritma geometri & orientasi telapak tangan
+│   ├── detector/          # Pipeline MediaPipe & pembungkus kelas model
+│   ├── drawing/           # Smart Canvas & integrasi export file
+│   ├── gesture/           # Event-driven Gesture Engine & History Buffer
+│   ├── models/            # Dataclass (Hand, Landmark, Gesture)
+│   ├── tracker/           # Centroid Tracker (Hungarian Alg) & Motion Engine
+│   ├── ui/                # Dashboard, FPS counter, Overlay Bounding Box
+│   ├── virtual_mouse/     # PyAutoGUI Cursor Controller & Smoother
+│   └── main.py            # Application Core-Loop & Hotkey Switcher
 │
-├── .gitignore
-├── LICENSE
+├── assets/exports/        # Folder output penyimpanan PNG/PDF (Otomatis dibuat)
 ├── requirements.txt
 └── README.md
 
@@ -62,11 +83,7 @@ VisionGesture/
 
 ## 🛠️ Panduan Instalasi & Eksekusi
 
-Berikut adalah langkah-langkah lengkap untuk mengunduh, mengonfigurasi *environment*, menginstal *library*, dan menjalankan proyek VisionGesture di komputer lokal Anda:
-
 ### 1. Kloning Repositori
-
-Buka Terminal, Command Prompt (cmd), atau PowerShell Anda, lalu jalankan perintah berikut untuk mengunduh seluruh *source code* langsung dari GitHub:
 
 ```bash
 git clone [https://github.com/taufiknhidayat/visiongesture.git](https://github.com/taufiknhidayat/visiongesture.git)
@@ -74,22 +91,12 @@ cd visiongesture
 
 ```
 
-### 2. Buat & Aktifkan Virtual Environment (venv)
-
-Sangat disarankan memakai *virtual environment* terisolasi agar *library* pendukung proyek ini tidak bentrok dengan *package* Python global di sistem operasi Anda. Jalankan salah satu perintah di bawah ini sesuai dengan OS yang digunakan:
+### 2. Konfigurasi Lingkungan Virtual (*Virtual Environment*)
 
 * **Windows (Command Prompt / cmd):**
 ```cmd
 python -m venv venv
 .\venv\Scripts\activate
-
-```
-
-
-* **Windows (PowerShell):**
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
 
 ```
 
@@ -103,54 +110,28 @@ source venv/bin/activate
 
 
 
-### 3. Instalasi Dependensi Eksternal
-
-Setelah tanda `(venv)` aktif di baris perintah terminal Anda, pastikan `pip` berada di versi terbaru, lalu instal semua *library* eksternal yang terdaftar di dalam file `requirements.txt`:
+### 3. Instalasi Dependensi & Menjalankan Aplikasi
 
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-
-```
-
-### 4. Jalankan Aplikasi
-
-Jalankan file utama aplikasi dari direktori terluar (*root directory*) proyek dengan menggunakan perintah berikut:
-
-```bash
 python -m src.visiongesture.main
 
 ```
 
 ---
 
-## ⚙️ Pusat Parameterisasi & Tuning
+## ⌨️ Kontrol Hotkey Aplikasi
 
-Kalibrasi sensitivitas deteksi dapat dilakukan secara langsung tanpa mengubah logika inti algoritma melalui file `configs/settings.py`:
+Tekan tombol berikut pada *keyboard* Anda saat aplikasi berjalan untuk berpindah mode:
 
-```python
-# configs/settings.py
-
-# Konfigurasi Geometri & Algoritma Tingkat Lanjut
-FINGER_RATIO_THRESHOLD = 1.05   # Rasio ambang batas adaptif perpanjangan jari
-THUMB_ANGLE_THRESHOLD = 160.0    # Batas minimum sudut kelurusan sendi jempol (derajat)
-FINGER_ANGLE_THRESHOLD = 150.0   # Batas minimum sudut kelurusan empat jari utama (derajat)
-SMOOTHING_WINDOW_SIZE = 5        # Jumlah frame riwayat untuk kalkulasi filter anti-flicker
-
-```
-
----
-
-## ⌨️ Kontrol Aplikasi
-
-* **`Q`**: Menutup jendela grafis (*window UI*) OpenCV, menghentikan tangkapan kamera, membebaskan alokasi memori, dan keluar dari aplikasi secara bersih (*graceful shutdown*).
+* **`M`** : Mengaktifkan Mode **Virtual Mouse**
+* **`D`** : Mengaktifkan Mode **Air Drawing**
+* **`T`** : Mengaktifkan Mode **Tracking Engine** (Hanya deteksi)
+* **`Q`** : Keluar aplikasi
 
 ---
 
 ## 📝 Lisensi
 
 Proyek ini dirilis di bawah hak cipta **MIT License** - Lihat file `LICENSE` untuk rincian ketentuan hukum lebih lanjut.
-
-```
-
-```
