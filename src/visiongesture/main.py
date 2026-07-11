@@ -15,10 +15,10 @@ from src.visiongesture.gesture.gesture_state import GestureState
 from src.visiongesture.tracker.motion_tracker import MotionTracker
 from src.visiongesture.virtual_mouse.mouse_controller import MouseController
 from src.visiongesture.drawing.drawing_engine import DrawingEngine
+from src.visiongesture.presentation.presentation_controller import PresentationController
 from src.visiongesture.ui.fps import FPSCounter
 from src.visiongesture.ui.overlay import Overlay
 from src.visiongesture.ui.dashboard import Dashboard
-
 
 class VisionGestureApp:
     def __init__(self):
@@ -32,12 +32,12 @@ class VisionGestureApp:
         self.motion_tracker = MotionTracker()
         
         self.mouse_controller = MouseController()
-        
-        # Priority 5: Air Drawing Engine
         self.drawing_engine = DrawingEngine()
         
-        self.active_module = DEFAULT_ACTIVE_MODULE
+        # Priority 6: Presentation Controller
+        self.presentation_controller = PresentationController()
         
+        self.active_module = DEFAULT_ACTIVE_MODULE
         self._register_events()
 
     def _register_events(self) -> None:
@@ -66,13 +66,22 @@ class VisionGestureApp:
         self.gesture_engine.events.on(GestureState.LOVE, on_love)
         self.gesture_engine.events.on(GestureState.FIST, on_fist)
 
-        # --- Virtual Mouse Scroll Handlers ---
-        def on_scroll_motion(direction: str):
-            if VIRTUAL_MOUSE_ENABLED and self.active_module == "Virtual Mouse":
-                self.mouse_controller.scroll(direction)
+        # --- Dynamic Motion Route Handlers ---
+        def on_motion(action: str):
+            if self.active_module == "Virtual Mouse" and VIRTUAL_MOUSE_ENABLED:
+                if action in ["Swipe Up", "Swipe Down"]:
+                    self.mouse_controller.scroll(action)
+            
+            elif self.active_module == "Presentation Controller":
+                self.presentation_controller.control_slide(action)
 
-        self.motion_tracker.on("Swipe Up", lambda d: on_scroll_motion("Swipe Up"))
-        self.motion_tracker.on("Swipe Down", lambda d: on_scroll_motion("Swipe Down"))
+        self.motion_tracker.on("Swipe Up", lambda d: on_motion("Swipe Up"))
+        # PERBAIKAN BUG: Typo on_scroll_motion telah diganti menjadi on_motion
+        self.motion_tracker.on("Swipe Down", lambda d: on_motion("Swipe Down"))
+        self.motion_tracker.on("Swipe Left", lambda d: on_motion("Swipe Left"))
+        self.motion_tracker.on("Swipe Right", lambda d: on_motion("Swipe Right"))
+        self.motion_tracker.on("Zoom In", lambda d: on_motion("Zoom In"))
+        self.motion_tracker.on("Zoom Out", lambda d: on_motion("Zoom Out"))
 
     def run(self) -> None:
         while True:
@@ -92,17 +101,19 @@ class VisionGestureApp:
 
             # Route execution based on Active Module
             if hands:
+                primary_hand = hands[0]
                 if self.active_module == "Virtual Mouse":
-                    self.mouse_controller.process(hands[0], frame)
+                    self.mouse_controller.process(primary_hand, frame)
+                elif self.active_module == "Presentation Controller":
+                    self.presentation_controller.process(primary_hand, frame)
 
             if self.active_module == "Air Drawing":
-                # Air Drawing handles its own frame merging (can run even without hands)
                 hand = hands[0] if hands else None
                 frame = self.drawing_engine.process(hand, frame)
 
             fps = self.fps_counter.get_fps()
 
-            # Render UI
+            # Render UI Layers
             frame = self.overlay.draw(frame, hands)
             if SHOW_DASHBOARD:
                 frame = self.dashboard.draw(frame, hands, fps, self.active_module)
@@ -110,8 +121,8 @@ class VisionGestureApp:
             # Draw Control Hotkeys Hint
             cv2.putText(
                 frame,
-                "KEYS: [M]ouse | [D]raw | [T]rack | [Q]uit",
-                (frame.shape[1] - 380, frame.shape[0] - 25),
+                "KEYS: [M]ouse | [D]raw | [P]resent | [T]rack",
+                (frame.shape[1] - 400, frame.shape[0] - 25),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
                 (180, 180, 180),
@@ -129,6 +140,8 @@ class VisionGestureApp:
                 self.active_module = "Virtual Mouse"
             elif key == ord("d"):
                 self.active_module = "Air Drawing"
+            elif key == ord("p"):
+                self.active_module = "Presentation Controller"
             elif key == ord("t"):
                 self.active_module = "Tracking Engine"
 
