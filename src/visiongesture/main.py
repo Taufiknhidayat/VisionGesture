@@ -11,6 +11,7 @@ from src.visiongesture.camera.camera import Camera
 from src.visiongesture.detector.hand_detector import HandDetector
 from src.visiongesture.gesture.gesture_engine import GestureEngine
 from src.visiongesture.gesture.gesture_state import GestureState
+from src.visiongesture.tracker.motion_tracker import MotionTracker
 from src.visiongesture.ui.fps import FPSCounter
 from src.visiongesture.ui.overlay import Overlay
 from src.visiongesture.ui.dashboard import Dashboard
@@ -23,22 +24,42 @@ class VisionGestureApp:
         self.fps_counter = FPSCounter()
         self.overlay = Overlay()
         self.dashboard = Dashboard()
+        
         self.gesture_engine = GestureEngine()
+        self.motion_tracker = MotionTracker()
         
         self.active_module = DEFAULT_ACTIVE_MODULE
         
         self._register_events()
 
     def _register_events(self) -> None:
-        """Register custom callbacks for specific gestures."""
+        """Registers all event listeners for Gestures and Motions."""
+        # --- Static Gestures ---
         def on_peace(hand):
-            print(f"[EVENT] {hand.handedness} Hand triggered PEACE gesture!")
+            print(f"[GESTURE] {hand.handedness} Hand ID-{hand.id} triggered PEACE!")
             
         def on_fist(hand):
-            print(f"[EVENT] {hand.handedness} Hand triggered FIST!")
+            print(f"[GESTURE] {hand.handedness} Hand ID-{hand.id} triggered FIST!")
 
         self.gesture_engine.events.on(GestureState.PEACE, on_peace)
         self.gesture_engine.events.on(GestureState.FIST, on_fist)
+
+        # --- Dynamic Motions ---
+        def on_swipe(data):
+            print(f"[MOTION] {data} performed a Swipe!")
+            
+        def on_zoom_in(data):
+            print(f"[MOTION] {data} are Zooming IN +++")
+
+        def on_zoom_out(data):
+            print(f"[MOTION] {data} are Zooming OUT ---")
+
+        self.motion_tracker.on("Swipe Left", lambda d: print(f"[MOTION] {d}: SWIPE LEFT <<<"))
+        self.motion_tracker.on("Swipe Right", lambda d: print(f"[MOTION] {d}: SWIPE RIGHT >>>"))
+        self.motion_tracker.on("Swipe Up", lambda d: print(f"[MOTION] {d}: SWIPE UP ^^^"))
+        self.motion_tracker.on("Swipe Down", lambda d: print(f"[MOTION] {d}: SWIPE DOWN vvv"))
+        self.motion_tracker.on("Zoom In", on_zoom_in)
+        self.motion_tracker.on("Zoom Out", on_zoom_out)
 
     def run(self) -> None:
         while True:
@@ -51,22 +72,22 @@ class VisionGestureApp:
             if MIRROR_CAMERA:
                 frame = cv2.flip(frame, 1)
 
-            # Detect Hands and calculate finger states
+            # Detector includes MediaPipe processing + Hungarian Stable Centroid Tracker
             frame, hands = self.detector.detect(frame)
             
-            # Process gestures
+            # Static Gesture Recognition
             self.gesture_engine.process(hands)
+            
+            # Dynamic Motion Recognition (Swipes, Zoom)
+            self.motion_tracker.process(hands)
 
-            # Calculate FPS
             fps = self.fps_counter.get_fps()
 
-            # Render UI Layers
+            # Render UI
             frame = self.overlay.draw(frame, hands)
-            
             if SHOW_DASHBOARD:
                 frame = self.dashboard.draw(frame, hands, fps, self.active_module)
 
-            # Draw Exit Instruction
             cv2.putText(
                 frame,
                 "Press 'Q' to Exit",

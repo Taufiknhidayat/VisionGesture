@@ -26,9 +26,18 @@ GESTURE_BUFFER_SIZE = 5
 GESTURE_CONFIDENCE_MIN = 0.80   
 
 # =========================================================
+# TRACKING & MOTION CONFIGURATIONS
+# =========================================================
+TRACKER_MAX_DISAPPEARED = 10    # Frames to wait before dropping a lost hand
+TRACKER_MAX_DISTANCE = 150      # Max pixel distance for Hungarian matching
+MOTION_HISTORY_SIZE = 15        # Queue size for motion path
+SWIPE_THRESHOLD = 80            # Minimum pixel movement to trigger a swipe
+ZOOM_SENSITIVITY = 15           # Minimum distance change to trigger zoom
+
+# =========================================================
 # DASHBOARD CONFIGURATIONS
 # =========================================================
 SHOW_DASHBOARD = True
 DASHBOARD_WIDTH = 320
-DASHBOARD_REFRESH_RATE = 1.0    # Seconds between CPU/RAM checks (prevents lag)
-DEFAULT_ACTIVE_MODULE = "Gesture Engine"
+DASHBOARD_REFRESH_RATE = 1.0
+DEFAULT_ACTIVE_MODULE = "Tracking Engine"
